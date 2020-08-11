@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +32,9 @@ import javax.swing.border.TitledBorder;
 
 import fr.philr.medimail.api.MedimailSession;
 import fr.philr.medimail.pop3access.FolderAsPOPBox;
+import fr.philr.medimail.pop3access.POP3ClientSession;
+import fr.philr.medimail.pop3access.POP3Server;
+import fr.philr.medimail.pop3access.POP3ServerFactory;
 import fr.philr.medimail.pop3access.POP3Session;
 import fr.philr.medimail.pop3access.ProtocolSession;
 import fr.philr.medimail.pop3access.ProtocolSessionFactory;
@@ -122,6 +126,7 @@ public class MainWindow {
 	public MainWindow() {
 		initialize();
 	}
+
 	private ProtocolSessionRegister reg;
 	private TimerTask fsSync;
 
@@ -147,25 +152,17 @@ public class MainWindow {
 
 			@Override
 			public void run() {
-				reg = new ProtocolSessionRegister();
-				reg.register(popPort, new ProtocolSessionFactory() {
+				POP3Server serv = new POP3Server(popPort, new POP3ServerFactory() {
 
 					@Override
-					public ProtocolSession newSession(AsynchronousSocketChannel ch) {
-						POP3Session session = new POP3Session(ch);
-						session.attachBox(new FolderAsPOPBox(username, password,
+					public void handleConnection(Socket clientSocket) {
+						POP3ClientSession newSession = new POP3ClientSession(clientSocket);
+						newSession.attachBox(new FolderAsPOPBox(username, password,
 								Paths.get(folderPath.toString(), "new"), Paths.get(folderPath.toString(), "read")));
-						return session;
+						newSession.launch();
 					}
 				});
-				while (true) {
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				serv.run();
 			}
 		});
 		popThread.start();
@@ -230,7 +227,7 @@ public class MainWindow {
 		frmPasserellePopMedimail = new JFrame();
 		frmPasserellePopMedimail.setResizable(false);
 		frmPasserellePopMedimail.setTitle("Passerelle POP MediMail");
-		frmPasserellePopMedimail.setBounds(100, 100, 426, 274);
+		frmPasserellePopMedimail.setBounds(100, 100, 414, 290);
 		frmPasserellePopMedimail.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmPasserellePopMedimail.getContentPane().setLayout(null);
 

@@ -43,11 +43,11 @@ public class MedimailSession {
 	}
 
 	public String getUrl(String url) {
-		return session.get(url).send().readToText();
+		return session.get(url).verify(false).send().readToText();
 	}
 
 	public byte[] getBytes(String url) {
-		return session.get(url).send().readToBytes();
+		return session.get(url).verify(false).send().readToBytes();
 	}
 
 	private void extractMessages(Elements trs, boolean opened) {
@@ -84,7 +84,7 @@ public class MedimailSession {
 	}
 
 	public void fetchMessageHeaders() {
-		String html = session.get("https://medimail.mipih.fr/").send().readToText();
+		String html = session.get("https://medimail.mipih.fr/").verify(false).send().readToText();
 		Document doc = Jsoup.parse(html);
 		String pages = doc.select("#pagination").text();
 		Matcher m = PAGINATION_NUMBERS.matcher(pages);
@@ -104,7 +104,7 @@ public class MedimailSession {
 		for (int i = 1; i <= pageMax; i++) {
 			System.out.println("Traitement de la page " + i + "...");
 			String url = String.format("https://medimail.mipih.fr/?m=liste&f=%d&o=date&p=%d", folderID, i);
-			String messagesList = session.get(url).send().readToText();
+			String messagesList = session.get(url).verify(false).send().readToText();
 			Document pageDoc = Jsoup.parse(messagesList);
 			Elements unopenMessages = pageDoc.select("tr.unopen");
 			Elements openMessages = pageDoc.select("tr.open");
@@ -116,7 +116,7 @@ public class MedimailSession {
 	
 
 	public void connect() throws CredentialException {
-		String result = session.post("https://medimail.mipih.fr/")
+		String result = session.post("https://medimail.mipih.fr/").verify(false)
 				.body(Parameter.of("login", username), Parameter.of("password", password)).send().readToText();
 		if (result.contains("Echec de l\\'authentification.") || result.contains("Session invalide")
 				|| result.contains("Le login doit être une adresse mail valide."))
